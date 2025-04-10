@@ -1,0 +1,16 @@
+name: 'Standalone Kaniko with System Emulation'
+description: 'Makes Kaniko available as a standalone binary with system directory emulation'
+author: 'Your Name'
+inputs:
+  version:
+    description: 'Kaniko version to install'
+    required: false
+    default: 'v1.9.1'
+  emulate-system:
+    description: 'Create emulated system directories'
+    required: false
+    default: 'true'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
+  post: 'dist/cleanup.js'
