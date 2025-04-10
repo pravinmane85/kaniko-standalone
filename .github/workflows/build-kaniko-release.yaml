@@ -1,0 +1,62 @@
+name: Build Kaniko with System Emulation
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Kaniko version to build'
+        required: false
+        default: 'v1.12.0'
+  push:
+    tags:
+      - 'kaniko-*'
+
+jobs:
+  build-kaniko:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          make git gcc \
+          overlayroot fuse zstd xz-utils \
+          libselinux-dev libseccomp-dev libssl-dev
+
+    - name: Build Kaniko with all features
+      run: |
+        git clone https://github.com/GoogleContainerTools/kaniko.git
+        cd kaniko
+        git checkout ${{ github.event.inputs.version || 'v1.12.0' }}
+        make GO_BUILD_FLAGS="-tags=ecr,gcr,acr"
+        
+        # Create system emulation directories
+        mkdir -p kaniko-release/system
+        mkdir -p kaniko-release/system/{proc,dev,sys,etc,tmp}
+        
+        # Create minimal system files
+        echo "root:x:0:0:root:/root:/bin/sh" > kaniko-release/system/etc/passwd
+        echo "0 0 0 0 0 0 0 0 0 0" > kaniko-release/system/proc/stat
+        echo "none / / 0 0" > kaniko-release/system/proc/mountinfo
+        touch kaniko-release/system/dev/null
+        
+        # Package the binary with system emulation
+        cp out/executor kaniko-release/
+        chmod +x kaniko-release/executor
+        tar czvf kaniko-bin.tar.gz kaniko-release/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: kaniko-${{ github.event.inputs.version || 'v1.12.0' }}
+        name: Kaniko ${{ github.event.inputs.version || 'v1.12.0' }} (with system emulation)
+        body: "Standalone Kaniko binary with system emulation"
+        files: kaniko/kaniko-bin.tar.gz
