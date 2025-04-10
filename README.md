@@ -1,5 +1,16 @@
 # kaniko-standalone
 
+# Building and Packaging
+1. install dependancies
+   ```
+     npm install
+   ```
+3. Build the action
+  ```
+    npm run build
+  ```
+4. the compiled files will be in the dist/ directory
+
 Example Usage
 
 ```
