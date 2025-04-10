@@ -11,7 +11,7 @@
   ```
 4. the compiled files will be in the dist/ directory
 
-Example Usage
+# Example Usage
 
 ```
 name: Enhanced Kaniko Usage
