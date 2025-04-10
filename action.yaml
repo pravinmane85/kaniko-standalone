@@ -1,16 +1,70 @@
-name: 'Standalone Kaniko with System Emulation'
-description: 'Makes Kaniko available as a standalone binary with system directory emulation'
-author: 'Pravin Mane'
+name: 'Kaniko Standalone with System Emulation'
+description: 'Build container images with pre-built Kaniko and system emulation'
 inputs:
   version:
-    description: 'Kaniko version to install'
+    description: 'Kaniko version to use'
     required: false
-    default: 'v1.9.1'
+    default: 'v1.12.0'
+  dockerfile:
+    description: 'Path to Dockerfile'
+    required: false
+    default: 'Dockerfile'
+  context:
+    description: 'Build context path'
+    required: false
+    default: '.'
+  destination:
+    description: 'Registry destination'
+    required: true
   emulate-system:
-    description: 'Create emulated system directories'
+    description: 'Enable system emulation'
     required: false
     default: 'true'
+
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
-  post: 'dist/cleanup.js'
+  using: 'composite'
+  steps:
+    - name: Download Kaniko binary
+      shell: bash
+      run: |
+        KANIKO_VERSION=${{ inputs.version }}
+        curl -sL https://github.com/${{ github.repository }}/releases/download/kaniko-${KANIKO_VERSION}/kaniko-bin.tar.gz -o kaniko-bin.tar.gz
+        tar xzf kaniko-bin.tar.gz
+        chmod +x kaniko-release/executor
+        sudo mv kaniko-release/executor /usr/local/bin/kaniko-executor
+        echo "/usr/local/bin" >> $GITHUB_PATH
+
+    - name: Setup system emulation
+      if: ${{ inputs.emulate-system == 'true' }}
+      shell: bash
+      run: |
+        # Create emulated system root
+        export ROOTFS=$(mktemp -d)
+        mkdir -p $ROOTFS/{proc,dev,sys,etc,tmp}
+        
+        # Copy pre-created system files from release
+        cp -r kaniko-release/system/* $ROOTFS/
+        
+        # Additional system files Kaniko expects
+        mkdir -p $ROOTFS/proc/self
+        echo "0 0 0 0 0 0 0 0 0 0" > $ROOTFS/proc/self/stat
+        echo "none / / 0 0" > $ROOTFS/proc/self/mountinfo
+        echo "root:x:0:0:root:/root:/bin/sh" > $ROOTFS/etc/passwd
+        touch $ROOTFS/dev/null
+
+    - name: Setup registry auth
+      shell: bash
+      run: |
+        mkdir -p /kaniko/.docker
+        echo "{\"auths\":{\"${{ secrets.REGISTRY_HOST }}\":{\"auth\":\"$(echo -n ${{ secrets.REGISTRY_USERNAME }}:${{ secrets.REGISTRY_PASSWORD }} | base64)\"}}" > /kaniko/.docker/config.json
+
+    - name: Build and push
+      shell: bash
+      run: |
+        ${{ inputs.emulate-system == 'true' && 'export ROOTFS=$(echo $ROOTFS)' || '' }}
+        kaniko-executor \
+          --dockerfile=${{ inputs.dockerfile }} \
+          --context=${{ inputs.context }} \
+          --destination=${{ inputs.destination }} \
+          ${{ inputs.emulate-system == 'true' && '--use-new-run --rootfs=$ROOTFS' || '' }} \
+          --verbosity=info
