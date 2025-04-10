@@ -9,7 +9,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Setup Kaniko with System Emulation
-      uses: pravinmane85/kaniko-standalone-action@v1
+      uses: pravinmane85/kaniko-standalone@main
       with:
         version: 'v1.9.1'
         emulate-system: 'true'
