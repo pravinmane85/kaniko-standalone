@@ -1,48 +1,92 @@
 # kaniko-standalone
 
+This implementation provides complete system emulation while maintaining the standalone nature of Kaniko, suitable for environments where container isolation isn't available.
+
+## Key System Emulation Components:
+
+1. **Pre-built System Files**:
+   - Included in the release package (`/system` directory)
+   - Contains minimal `/proc`, `/dev`, `/sys`, and `/etc` structures
+
+2. **Runtime Emulation**:
+   - Creates temporary root filesystem
+   - Copies necessary system files
+   - Uses Kaniko's `--rootfs` and `--use-new-run` flags
+
+3. **Isolation**:
+   - All system emulation happens in temp directories
+   - No modification to host system files
+   - Cleaned up automatically after build
+
+## Customization Options:
+
+1. To add more system files:
+```bash
+# In build workflow
+echo "myfilecontent" > kaniko-release/system/etc/myconfig
+```
+
+2. To disable emulation:
+```yaml
+with:
+  emulate-system: 'false'
+```
+
+3. To extend emulated filesystem:
+```bash
+# In action steps
+mkdir -p $ROOTFS/usr/lib
+cp -r /usr/lib/x86_64-linux-gnu $ROOTFS/usr/lib/
+```
+
 # Building and Packaging
-1. install dependancies
-   ```
-     npm install
-   ```
-3. Build the action
-  ```
-    npm run build
-  ```
-4. the compiled files will be in the dist/ directory
+Just run the action build-kaniko-release
 
 # Example Usage
 
 ```
-name: Enhanced Kaniko Usage
+name: Build and Push to ECR
 on: [push]
 
+env:
+  AWS_REGION: 'us-east-1'
+  ECR_REPO: 'your-ecr-repo-name'
+
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+    permissions:
+      id-token: write  # Needed for AWS OIDC auth
+      contents: read
       
-    - name: Setup Kaniko with System Emulation
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::123456789012:role/your-github-actions-role
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to ECR
+      id: login-ecr
+      run: |
+        aws ecr get-login-password | docker login \
+          --username AWS \
+          --password-stdin ${{ format('{0}.dkr.ecr.{1}.amazonaws.com', steps.login-ecr.outputs.account, env.AWS_REGION) }}
+        echo "registry=${{ format('{0}.dkr.ecr.{1}.amazonaws.com', steps.login-ecr.outputs.account, env.AWS_REGION) }}" >> $GITHUB_OUTPUT
+      env:
+        AWS_ACCOUNT_ID: '123456789012'
+
+    - name: Build with Kaniko
       uses: your-username/kaniko-standalone-action@v1
       with:
-        version: 'v1.9.1'
+        version: 'v1.12.0'
+        destination: '${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}'
         emulate-system: 'true'
-      
-    - name: Build and Push with Emulated System
-      run: |
-        mkdir -p /kaniko/.docker
-        echo "{\"auths\":{\"${{ secrets.REGISTRY_URL }}\":{\"auth\":\"$(echo -n ${{ secrets.REGISTRY_USERNAME }}:${{ secrets.REGISTRY_PASSWORD }} | base64)\"}}" > /kaniko/.docker/config.json
-        
-        export ROOTFS=$(mktemp -d)
-        mkdir -p $ROOTFS/{proc,sys,dev,etc,tmp}
-        
-        executor \
-          --dockerfile=Dockerfile \
-          --context=${{ github.workspace }} \
-          --destination=${{ secrets.REGISTRY_URL }}/my-image:latest \
-          --verbosity=info \
-          --use-new-run \
-          --rootfs=$ROOTFS
+      env:
+        REGISTRY_HOST: ${{ steps.login-ecr.outputs.registry }}
+        REGISTRY_USERNAME: 'AWS'
+        REGISTRY_PASSWORD: ${{ steps.login-ecr.outputs.token }}
 ```
