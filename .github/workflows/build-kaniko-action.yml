@@ -1,5 +1,6 @@
 name: Build Kaniko Standalone Action
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'src/**'
