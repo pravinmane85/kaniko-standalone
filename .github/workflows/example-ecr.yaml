@@ -1,0 +1,44 @@
+name: Build and Push to ECR
+on: [push]
+
+env:
+  AWS_REGION: 'us-east-1'
+  ECR_REPO: 'your-ecr-repo-name'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Needed for AWS OIDC auth
+      contents: read
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::123456789012:role/your-github-actions-role
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to ECR
+      id: login-ecr
+      run: |
+        aws ecr get-login-password | docker login \
+          --username AWS \
+          --password-stdin ${{ format('{0}.dkr.ecr.{1}.amazonaws.com', steps.login-ecr.outputs.account, env.AWS_REGION) }}
+        echo "registry=${{ format('{0}.dkr.ecr.{1}.amazonaws.com', steps.login-ecr.outputs.account, env.AWS_REGION) }}" >> $GITHUB_OUTPUT
+      env:
+        AWS_ACCOUNT_ID: '123456789012'
+
+    - name: Build with Kaniko
+      uses: your-username/kaniko-standalone-action@v1
+      with:
+        version: 'v1.12.0'
+        destination: '${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}'
+        emulate-system: 'true'
+      env:
+        REGISTRY_HOST: ${{ steps.login-ecr.outputs.registry }}
+        REGISTRY_USERNAME: 'AWS'
+        REGISTRY_PASSWORD: ${{ steps.login-ecr.outputs.token }}
