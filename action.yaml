@@ -1,6 +1,6 @@
 name: 'Standalone Kaniko with System Emulation'
 description: 'Makes Kaniko available as a standalone binary with system directory emulation'
-author: 'Your Name'
+author: 'Pravin Mane'
 inputs:
   version:
     description: 'Kaniko version to install'
