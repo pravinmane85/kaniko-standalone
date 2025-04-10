@@ -11,7 +11,7 @@ jobs:
     - name: Setup Kaniko with System Emulation
       uses: pravinmane85/kaniko-standalone@main
       with:
-        version: 'v1.9.1'
+        version: 'v1.23.2'
         emulate-system: 'true'
       
     - name: Build and Push with Emulated System
