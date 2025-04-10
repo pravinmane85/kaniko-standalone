@@ -36,6 +36,7 @@ jobs:
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
+        git status
         
         # Check if there are changes in dist folder
         if git diff --quiet --exit-code -- dist/; then
