@@ -37,7 +37,7 @@ jobs:
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        
+        ls -ltrah dist
         # Check if there are changes in dist folder
         if git diff --quiet --exit-code -- dist/; then
           echo "No changes in dist folder to commit"
