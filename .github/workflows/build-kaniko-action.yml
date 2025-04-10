@@ -38,10 +38,11 @@ jobs:
         git config --global user.email "actions@github.com"
         
         # Check if there are changes in dist folder
-        if git diff --quiet --exit-code -- dist/; then
-          echo "No changes in dist folder to commit"
-        else
+        
+        #if git diff --quiet --exit-code -- dist/; then
+        #  echo "No changes in dist folder to commit"
+        #else
           git add dist/
           git commit -m "Build: Update dist folder [skip ci]"
           git push origin HEAD:main
-        fi
+        #fi
