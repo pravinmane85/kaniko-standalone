@@ -1,4 +1,4 @@
-name: Build Image with Kaniko System Emulation
+name: Build and push to GHCR
 on: [push]
 
 jobs:
