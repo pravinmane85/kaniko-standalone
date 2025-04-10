@@ -6,7 +6,7 @@ on:
       version:
         description: 'Kaniko version to build'
         required: false
-        default: 'v1.12.0'
+        default: 'v1.23.2'
   push:
     tags:
       - 'kaniko-*'
