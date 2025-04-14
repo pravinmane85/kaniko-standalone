@@ -53,6 +53,9 @@ jobs:
         chmod +x kaniko-release/executor
         tar czvf kaniko-bin.tar.gz kaniko-release/
 
+        # Create directory for kaniko settings
+        mkdir -p /kaniko/.docker
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       env:
