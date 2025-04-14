@@ -35,7 +35,7 @@ jobs:
       run: |
         git clone https://github.com/GoogleContainerTools/kaniko.git
         cd kaniko
-        git checkout ${{ github.event.inputs.version || 'v1.12.0' }}
+        git checkout ${{ github.event.inputs.version || 'v1.23.2' }}
         make GO_BUILD_FLAGS="-tags=ecr,gcr,acr"
         
         # Create system emulation directories
@@ -55,8 +55,10 @@ jobs:
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
       with:
-        tag_name: kaniko-${{ github.event.inputs.version || 'v1.12.0' }}
-        name: Kaniko ${{ github.event.inputs.version || 'v1.12.0' }} (with system emulation)
+        tag_name: kaniko-${{ github.event.inputs.version || 'v1.23.2' }}
+        name: Kaniko ${{ github.event.inputs.version || 'v1.23.2' }} (with system emulation)
         body: "Standalone Kaniko binary with system emulation"
         files: kaniko/kaniko-bin.tar.gz
