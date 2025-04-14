@@ -7,12 +7,14 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+          ref: "nodejs-18.19.0"
 
     - name: Build with Kaniko
-      uses: your-username/kaniko-standalone-action@v1
+      uses: pravinmane85/kaniko-standalone@main
       with:
-        version: 'v1.12.0'
-        destination: 'ghcr.io/your-username/your-image:${{ github.sha }}'
+        version: 'v1.23.2'
+        destination: 'ghcr.io/pravinmane85/nodejs-18.19.0:${{ github.sha }}'
         emulate-system: 'true'
       env:
         REGISTRY_HOST: ghcr.io
