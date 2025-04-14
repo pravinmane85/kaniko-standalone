@@ -8,8 +8,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-          ref: "nodejs-18.19.0"
 
     - name: Build with Kaniko
       uses: pravinmane85/kaniko-standalone@main
