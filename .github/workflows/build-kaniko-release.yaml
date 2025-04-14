@@ -1,4 +1,4 @@
-name: Build Kaniko Release with System Emulation
+name: Create Kaniko Release
 
 on:
   workflow_dispatch:
