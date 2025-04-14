@@ -56,7 +56,7 @@ runs:
       shell: bash
       run: |
         mkdir -p /kaniko/.docker
-        echo "{\"auths\":{\"${{ secrets.REGISTRY_HOST }}\":{\"auth\":\"$(echo -n ${{ secrets.REGISTRY_USERNAME }}:${{ secrets.REGISTRY_PASSWORD }} | base64)\"}}" > /kaniko/.docker/config.json
+        echo "{\"auths\":{\"${{ env.REGISTRY_HOST }}\":{\"auth\":\"$(echo -n ${{ env.REGISTRY_USERNAME }}:${{ env.REGISTRY_PASSWORD }} | base64)\"}}" > /kaniko/.docker/config.json
 
     - name: Build and push
       shell: bash
