@@ -53,21 +53,11 @@ runs:
         touch $ROOTFS/dev/null
         touch $ROOTFS/.env
 
-
-    
     - name: Build and push
+      shell: bash
       run: |
         if [ "${{ inputs.emulate-system }}" == "true" ]; then
           export ROOTFS=$(echo $ROOTFS)
         fi
-        sudo chroot . bash -c "
-          . /.env
-          set
-          kaniko-executor \
-            --dockerfile=${{ inputs.dockerfile }} \
-            --context=${{ inputs.context }} \
-            --destination=${{ inputs.destination }} \
-            $(if [ "${{ inputs.emulate-system }}" == "true" ]; then echo '--use-new-run --rootfs=$ROOTFS'; fi) \
-            --verbosity=info
-        "
+        sudo chroot $ROOTFS bash -c ". /.env; set; kaniko-executor --dockerfile=${{ inputs.dockerfile }} --context=${{ inputs.context }} --destination=${{ inputs.destination }} $(if [ "${{ inputs.emulate-system }}" == "true" ]; then echo '--use-new-run; fi) --verbosity=info"
 
