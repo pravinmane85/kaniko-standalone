@@ -51,15 +51,24 @@ runs:
         echo "none / / 0 0" > $ROOTFS/proc/self/mountinfo
         echo "root:x:0:0:root:/root:/bin/sh" > $ROOTFS/etc/passwd
         touch $ROOTFS/dev/null
+        touch $ROOTFS/.env
 
 
+    
     - name: Build and push
-      shell: bash
-      run: |
-        ${{ inputs.emulate-system == 'true' && 'export ROOTFS=$(echo $ROOTFS)' || '' }}
-        kaniko-executor \
-          --dockerfile=${{ inputs.dockerfile }} \
-          --context=${{ inputs.context }} \
-          --destination=${{ inputs.destination }} \
-          ${{ inputs.emulate-system == 'true' && '--use-new-run --rootfs=$ROOTFS' || '' }} \
-          --verbosity=info
+      shell: bash
+      run: |
+        if [ "${{ inputs.emulate-system }}" == "true" ]; then
+          export ROOTFS=$(echo $ROOTFS)
+        fi
+        sudo chroot . bash -c "
+          . /.env
+          set
+          kaniko-executor \
+            --dockerfile=${{ inputs.dockerfile }} \
+            --context=${{ inputs.context }} \
+            --destination=${{ inputs.destination }} \
+            $(if [ "${{ inputs.emulate-system }}" == "true" ]; then echo '--use-new-run --rootfs=$ROOTFS'; fi) \
+            --verbosity=info
+        "
+
