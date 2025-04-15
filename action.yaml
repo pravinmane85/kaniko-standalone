@@ -56,7 +56,6 @@ runs:
 
     
     - name: Build and push
-      shell: bash
       run: |
         if [ "${{ inputs.emulate-system }}" == "true" ]; then
           export ROOTFS=$(echo $ROOTFS)
