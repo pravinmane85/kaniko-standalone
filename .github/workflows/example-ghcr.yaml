@@ -9,6 +9,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Create Docker Config
+      run: |
+        mkdir -p /tmp/kaniko/.docker
+        export DOCKER_CONFIG=/tmp/kaniko/.docker
+        echo '{"auths":{"ghcr.io":{"auth":"$(echo -n ${{ github.actor }}:${{ secrets.TOKEN }} | base64)"}}}' > /tmp/kaniko/.docker/config.json
+        
     - name: Build with Kaniko
       uses: pravinmane85/kaniko-standalone@main
       with:
