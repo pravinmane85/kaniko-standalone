@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mini Hill Climb</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #87CEEB;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+    .controls {
+      position: fixed;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+    }
+    button {
+      font-size: 20px;
+      padding: 15px 30px;
+      margin: 10px;
+      border: none;
+      border-radius: 10px;
+      background: #333;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div class="controls">
+  <button id="left">⬅</button>
+  <button id="right">➡</button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let gravity = 0.6;
+
+let car = {
+  x: 150,
+  y: 0,
+  width: 60,
+  height: 30,
+  speed: 0,
+  velocityY: 0,
+  fuel: 100
+};
+
+let keys = { left: false, right: false };
+let terrain = [];
+let cameraOffset = 0;
+
+// Generate terrain
+function generateTerrain() {
+  terrain = [];
+  let height = canvas.height - 150;
+  for (let i = 0; i < 5000; i += 20) {
+    height += Math.random() * 40 - 20;
+    height = Math.max(canvas.height - 300, Math.min(canvas.height - 50, height));
+    terrain.push({ x: i, y: height });
+  }
+}
+generateTerrain();
+
+// Controls (keyboard)
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") keys.left = true;
+  if (e.key === "ArrowRight") keys.right = true;
+});
+document.addEventListener("keyup", e => {
+  if (e.key === "ArrowLeft") keys.left = false;
+  if (e.key === "ArrowRight") keys.right = false;
+});
+
+// Controls (buttons)
+document.getElementById("left").ontouchstart = () => keys.left = true;
+document.getElementById("left").ontouchend = () => keys.left = false;
+document.getElementById("right").ontouchstart = () => keys.right = true;
+document.getElementById("right").ontouchend = () => keys.right = false;
+
+document.getElementById("left").onmousedown = () => keys.left = true;
+document.getElementById("left").onmouseup = () => keys.left = false;
+document.getElementById("right").onmousedown = () => keys.right = true;
+document.getElementById("right").onmouseup = () => keys.right = false;
+
+// Get terrain height
+function getGroundY(x) {
+  let index = Math.floor(x / 20);
+  if (terrain[index]) return terrain[index].y;
+  return canvas.height;
+}
+
+// Update physics
+function update() {
+  if (car.fuel > 0) {
+    if (keys.right) {
+      car.speed += 0.2;
+      car.fuel -= 0.05;
+    }
+    if (keys.left) {
+      car.speed -= 0.2;
+      car.fuel -= 0.05;
+    }
+  }
+
+  car.speed *= 0.98;
+  car.velocityY += gravity;
+
+  car.x += car.speed;
+  car.y += car.velocityY;
+
+  let groundY = getGroundY(car.x);
+
+  if (car.y + car.height > groundY) {
+    car.y = groundY - car.height;
+    car.velocityY = 0;
+  }
+
+  cameraOffset = car.x - 150;
+}
+
+// Draw terrain
+function drawTerrain() {
+  ctx.beginPath();
+  ctx.moveTo(0, canvas.height);
+
+  terrain.forEach(point => {
+    ctx.lineTo(point.x - cameraOffset, point.y);
+  });
+
+  ctx.lineTo(canvas.width, canvas.height);
+  ctx.fillStyle = "green";
+  ctx.fill();
+}
+
+// Draw car
+function drawCar() {
+  ctx.fillStyle = "red";
+  ctx.fillRect(car.x - cameraOffset, car.y, car.width, car.height);
+
+  ctx.fillStyle = "black";
+  ctx.beginPath();
+  ctx.arc(car.x - cameraOffset + 15, car.y + 30, 10, 0, Math.PI * 2);
+  ctx.arc(car.x - cameraOffset + 45, car.y + 30, 10, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// Draw UI
+function drawUI() {
+  ctx.fillStyle = "black";
+  ctx.font = "18px Arial";
+  ctx.fillText("Fuel: " + Math.floor(car.fuel), 20, 30);
+  ctx.fillText("Distance: " + Math.floor(car.x), 20, 55);
+
+  if (car.fuel <= 0) {
+    ctx.fillText("Out of Fuel!", 20, 80);
+  }
+}
+
+// Game loop
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  update();
+  drawTerrain();
+  drawCar();
+  drawUI();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
